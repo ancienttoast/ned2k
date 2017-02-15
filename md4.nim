@@ -68,7 +68,7 @@ proc encode (output: var openarray[uint8], input: openarray[uint32], length: int
 
 # Decodes input (unsigned char) into output (UINT4). Assumes len is
 # a multiple of 4.
-proc decode (output: var openarray[uint32], input: openarray[uint8], length: int) =
+proc decode (output: var openarray[uint32], input: MD4Block | string, length: int) =
   var
     i = 0
     j = 0
@@ -79,7 +79,7 @@ proc decode (output: var openarray[uint32], input: openarray[uint8], length: int
     j += 4
 
 # MD4 basic transformation. Transforms state based on block.
-proc transform (state: var MD4State, bblock: MD4Block) =
+proc transform (state: var MD4State, bblock: MD4Block | string) =
   var
     a = state[0]
     b = state[1]
@@ -192,8 +192,7 @@ proc update* (c: var MD4Context, input: string, length: int) =
 
     var i = partLen
     while i + 63 < length:
-      # TODO: rather ugly
-      transform (c.state, cast[MD4Block](input[i..i+64][0]))
+      transform (c.state, input[i..<i+64])
       i += 64
     copyMem (addr c.buffer[0], addr input[i], length-i)
   else:
