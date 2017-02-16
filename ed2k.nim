@@ -8,24 +8,24 @@ const
   ChunkSize = 9728000
 
 
-proc readString (f: File, buffer: var string) =
+proc readString(f: File, buffer: var string) =
   let
-    length = f.readBuffer (addr buffer[0], buffer.len)
+    length = f.readBuffer(addr buffer[0], buffer.len)
   # should only happen at the end of files
-  buffer.setLen (length)
+  buffer.setLen(length)
 
 
-proc getEd2k* (filename: string): MD4Digest =
+proc getEd2k*(filename: string): MD4Digest =
   let
-    file = open (filename)
+    file = open(filename)
   #  size = file.getFileSize()
   #  chunks = (size.int / ChunkSize).ceil.int
 
   var
     hashes = newSeq[uint8]()
-    buffer = newString (ChunkSize)
+    buffer = newString(ChunkSize)
   while not file.endOfFile():
-    file.readString (buffer)
+    file.readString(buffer)
     hashes.add  buffer.toMd4()
   file.close()
 
