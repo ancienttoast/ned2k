@@ -1,3 +1,6 @@
+##[
+    eDonkey2000 hash: http://mldonkey.sourceforge.net/Ed2k-hash
+]##
 from math import ceil
 import md4
 

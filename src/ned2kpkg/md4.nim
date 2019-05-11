@@ -1,3 +1,8 @@
+##[
+
+  Based on source code provided in https://tools.ietf.org/html/rfc1320 by RSA Data Security, Inc.
+
+]##
 type
   MD4State = array[4, uint32]
   MD4Block = array[64, uint8] 
@@ -251,16 +256,3 @@ proc toMD4* (s: string): MD4Digest =
 proc getMD4* (s: string): string =
   ## computes an MD5 value of `s` and returns its string representation
   $s.toMD4()
-
-
-
-
-
-when isMainModule:
-  assert  getMD4("") == "31d6cfe0d16ae931b73c59d7e0c089c0"
-  assert  getMD4("a") == "bde52cb31de33e46245e05fbdbd6fb24"
-  assert  getMD4("abc") == "a448017aaf21d8525fc10ae87aa6729d"
-  assert  getMD4("message digest") == "d9130a8164549fe818874806e1c7014b"
-  assert  getMD4("abcdefghijklmnopqrstuvwxyz") == "d79e1c308aa5bbcdeea8ed63df412da9"
-  assert  getMD4("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") == "043f8582f241db351ce627e153e7f0e4"
-  assert  getMD4("12345678901234567890123456789012345678901234567890123456789012345678901234567890") == "e33b4ddc9c38f2199c3e7b164fcc0536"

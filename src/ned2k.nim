@@ -1,4 +1,4 @@
-import os, ed2k
+import os, ned2kpkg/ed2k
 
 
 proc printHelp() =
