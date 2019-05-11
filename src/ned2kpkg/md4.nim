@@ -31,7 +31,7 @@ const
   S32 = 9
   S33 = 11
   S34 = 15
-  Padding = "\x80\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" &
+  PADDING = "\x80\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" &
             "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
 
 
@@ -224,7 +224,7 @@ proc md4Finalize*(self: var MD4Context): MD4Digest =
   let
     index = (self.count[0] shr 3) and 0x3f
     padLen = if index < 56: 56 - index.int else: 120 - index.int
-  self.md4Update(Padding, padLen)
+  self.md4Update(PADDING, padLen)
 
   # Append length (before padding)
   self.md4Update(cast[string](@bits), 8)
@@ -238,11 +238,11 @@ proc md4Finalize*(self: var MD4Context): MD4Digest =
 
 proc `$`*(digest: MD4Digest): string =
   ## Converts a `MD4Digest <#MD4Digest>`_ value into its string representation.
-  const digits = "0123456789abcdef"
+  const DIGITS = "0123456789abcdef"
   result = newString(digest.len*2)
   for i, d in digest:
-    result[i*2]   = digits[((d shr 4) and 0xF).int]
-    result[i*2+1] = digits[(d and 0xF).int]
+    result[i*2]   = DIGITS[((d shr 4) and 0xF).int]
+    result[i*2+1] = DIGITS[(d and 0xF).int]
 
 
 proc toMD4*(s: string): MD4Digest =
