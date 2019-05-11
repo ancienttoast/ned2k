@@ -1,35 +1,39 @@
-##[
-    eDonkey2000 hash: http://mldonkey.sourceforge.net/Ed2k-hash
-]##
+## Module for computing `eDonkey2000 checksums <http://mldonkey.sourceforge.net/Ed2k-hash>`_.
+##
+## **See also:**
+## * `ED2K <http://mldonkey.sourceforge.net/Ed2k-hash>`_
 from math import ceil
+from os import extractFilename
 import md4
 
 export md4.`$`
 
 
 const
-  ChunkSize = 9728000
+  CHUNK_SIZE = 9728000
 
-
-proc readString(f: File, buffer: var string) =
+proc getEd2k*(file: File): MD4Digest =
+  ## Computes the `ED2K checksum` for the given `file`.
   let
-    length = f.readBuffer(addr buffer[0], buffer.len)
-  # should only happen at the end of files
-  buffer.setLen(length)
-
-
-proc getEd2k*(filename: string): MD4Digest =
-  let
-    file = open(filename)
-  #  size = file.getFileSize()
-  #  chunks = (size.int / ChunkSize).ceil.int
-
+    size = file.getFileSize()
+    chunks = (size.int / ChunkSize).ceil.int
   var
-    hashes = newSeq[uint8]()
-    buffer = newString(ChunkSize)
+    hashes = newSeqOfCap[uint8](chunks*MD4Digest.len)
+    buffer = newString(CHUNK_SIZE)
   while not file.endOfFile():
-    file.readString(buffer)
-    hashes.add  buffer.toMd4()
+    let
+      length = file.readBuffer(addr buffer[0], buffer.len)
+    # should only happen at the end of files
+    buffer.setLen(length)
+    hashes &= buffer.toMd4()
   file.close()
 
   cast[string](hashes).toMd4()
+
+proc ed2kLink*(file: File, filename: string): string =
+  ## Computes the `ED2K Link` for `file`. `filename` is only used as a part of the returned link.
+  "ed2k://|file|" & filename.extractFilename & '|' & $file.getFileSize & '|' & $file.getEd2k() & '|'
+
+proc ed2kLink*(filename: string): string =
+  ## Computes the `ED2K Link` for `filename`.
+  ed2kLink(open(filename), filename)

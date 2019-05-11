@@ -6,9 +6,6 @@ proc printHelp() =
   echo "PATH must be a valid file or directory."
   quit()
 
-proc ed2kLink(filename: string): string =
-  "ed2k://|file|" & filename.extractFilename & '|' & $filename.getFileSize & '|' & $filename.getEd2k() & '|'
-
 
 if paramCount() < 1:
   printHelp()
