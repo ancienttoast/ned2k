@@ -238,7 +238,7 @@ proc finalize*(c: var MD4Context): MD4Digest =
 
 
 proc `$`*(d: MD4Digest): string =
-  ## converts a MD5Digest value into its string representation
+  ## converts a MD4Digest value into its string representation
   const digits = "0123456789abcdef"
   result = ""
   for i in 0..15:
@@ -247,12 +247,12 @@ proc `$`*(d: MD4Digest): string =
 
 
 proc toMD4* (s: string): MD4Digest =
-  ## computes the MD5Digest value for a string `s`
+  ## computes the MD4Digest value for a string `s`
   var
     c = initMD4()
   c.update(s)
   c.finalize()
 
 proc getMD4* (s: string): string =
-  ## computes an MD5 value of `s` and returns its string representation
+  ## computes an MD4 value of `s` and returns its string representation
   $s.toMD4()
