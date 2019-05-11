@@ -162,7 +162,7 @@ proc transform(state: var MD4State, bblock: MD4Block | string) =
 
 
 
-proc initMD4*(): MD4Context =
+proc md4Init*(): MD4Context =
   ## MD4 initialization. Begins an MD4 operation, writing a new context.
   result.count[0] = 0
   result.count[1] = 0
@@ -176,7 +176,7 @@ proc initMD4*(): MD4Context =
   zeroMem(addr result.buffer[0], result.buffer.sizeof)
 
 
-proc update(self: var MD4Context, input: string, length: int) =
+proc md4Update(self: var MD4Context, input: string, length: int) =
   # Compute number of bytes mod 64
   let
     index = ((self.count[0] shr 3) and 0x3f).int
@@ -204,14 +204,14 @@ proc update(self: var MD4Context, input: string, length: int) =
     if length != 0:
       copyMem(addr self.buffer[index], unsafeAddr input[0], length)
 
-proc update*(self: var MD4Context, input: string) =
+proc md4Update*(self: var MD4Context, input: string) =
   ## MD4 block update operation. Continues an MD4 message-digest
   ## operation, processing another message block, and updating the
   ## context.
-  self.update(input, input.len)
+  self.md4Update(input, input.len)
 
 
-proc finalize*(self: var MD4Context): MD4Digest =
+proc md4Finalize*(self: var MD4Context): MD4Digest =
   ## MD4 finalization. Ends an MD4 message-digest operation, writing the
   ## the message digest and zeroizing the context.
   var
@@ -224,10 +224,10 @@ proc finalize*(self: var MD4Context): MD4Digest =
   let
     index = (self.count[0] shr 3) and 0x3f
     padLen = if index < 56: 56 - index.int else: 120 - index.int
-  self.update(Padding, padLen)
+  self.md4Update(Padding, padLen)
 
   # Append length (before padding)
-  self.update(cast[string](@bits), 8)
+  self.md4Update(cast[string](@bits), 8)
   # Store state in digest
   encode(result, self.state, 16)
 
@@ -248,9 +248,9 @@ proc `$`*(digest: MD4Digest): string =
 proc toMD4*(s: string): MD4Digest =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s`.
   var
-    c = initMD4()
-  c.update(s)
-  c.finalize()
+    c = md4Init()
+  c.md4Update(s)
+  c.md4Finalize()
 
 proc getMD4*(s: string): string =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s` and returns its string representation.
