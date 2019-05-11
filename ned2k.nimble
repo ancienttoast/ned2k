@@ -1,7 +1,7 @@
 # Package
 version       = "0.1.0"
 author        = "stilll"
-description   = "A library for computing md4 and ed2k hashes"
+description   = "A library for computing md4 and ed2k checksums"
 license       = "MIT"
 srcDir        = "src"
 installExt    = @["nim"]

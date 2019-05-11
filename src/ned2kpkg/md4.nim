@@ -1,14 +1,18 @@
-##[
-
-  Based on source code provided in https://tools.ietf.org/html/rfc1320 by RSA Data Security, Inc.
-
-]##
+## Module for computing `MD4 checksums <https://en.wikipedia.org/wiki/MD4>`_.
+##
+## Based on source code provided in `RFC 1320 <https://tools.ietf.org/html/rfc1320>`_ by RSA Data Security, Inc.
+##
+## **See also:**
+## * `MD4 <https://en.wikipedia.org/wiki/MD4>`_
+## * `RFC 1320 <https://tools.ietf.org/html/rfc1320>`_
 type
   MD4State = array[4, uint32]
   MD4Block = array[64, uint8] 
 
   MD4Digest* = array[16, uint8]
+    ## MD4 checksum
   MD4Context* = object
+    ## Context to help calculate an MD4 checksum
     state: MD4State
     count: array[2, uint32]
     buffer: MD4Block
@@ -57,9 +61,9 @@ proc HH(a: var uint32, b, c, d, x: uint32, s: uint8) =
 
 
 
-# Encodes input (UINT4) into output (unsigned char). Assumes len is
-# a multiple of 4.
 proc encode(output: var openarray[uint8], input: openarray[uint32], length: int) =
+  # Encodes input (UINT4) into output (unsigned char). Assumes len is
+  # a multiple of 4.
   var
     i = 0
     j = 0
@@ -71,9 +75,9 @@ proc encode(output: var openarray[uint8], input: openarray[uint32], length: int)
     i += 1
     j += 4
 
-# Decodes input (unsigned char) into output (UINT4). Assumes len is
-# a multiple of 4.
 proc decode(output: var openarray[uint32], input: MD4Block | string, length: int) =
+  # Decodes input (unsigned char) into output (UINT4). Assumes len is
+  # a multiple of 4.
   var
     i = 0
     j = 0
@@ -83,8 +87,8 @@ proc decode(output: var openarray[uint32], input: MD4Block | string, length: int
     i += 1
     j += 4
 
-# MD4 basic transformation. Transforms state based on block.
 proc transform(state: var MD4State, bblock: MD4Block | string) =
+  # MD4 basic transformation. Transforms state based on block.
   var
     a = state[0]
     b = state[1]
@@ -159,7 +163,7 @@ proc transform(state: var MD4State, bblock: MD4Block | string) =
 
 
 proc initMD4*(): MD4Context =
-  # MD4 initialization. Begins an MD4 operation, writing a new context.
+  ## MD4 initialization. Begins an MD4 operation, writing a new context.
   result.count[0] = 0
   result.count[1] = 0
 
@@ -172,87 +176,84 @@ proc initMD4*(): MD4Context =
   zeroMem(addr result.buffer[0], result.buffer.sizeof)
 
 
-# MD4 block update operation. Continues an MD4 message-digest
-# operation, processing another message block, and updating the
-# context.
-proc update*(c: var MD4Context, input: string, length: int) =
-  var input = input
-
+proc update(self: var MD4Context, input: string, length: int) =
   # Compute number of bytes mod 64
   let
-    index = ((c.count[0] shr 3) and 0x3f).int
+    index = ((self.count[0] shr 3) and 0x3f).int
   # Update number of bits
-  c.count[0] += length.uint32 shl 3
-  if c.count[0] < length.uint32 shl 3:
-    c.count[1] += 1
-  c.count[1] += length.uint32 shr 29
+  self.count[0] += length.uint32 shl 3
+  if self.count[0] < length.uint32 shl 3:
+    self.count[1] += 1
+  self.count[1] += length.uint32 shr 29
 
   let
     partLen = 64 - index
 
   # Transform as many times as possible.
   if length >= partLen:
-    copyMem(addr c.buffer[index], addr input[0], partLen)
-    transform(c.state, c.buffer)
+    copyMem(addr self.buffer[index], unsafeAddr input[0], partLen)
+    transform(self.state, self.buffer)
 
     var i = partLen
     while i + 63 < length:
-      transform(c.state, input[i..<i+64])
+      transform(self.state, input[i..<i+64])
       i += 64
     if length-i != 0:
-      copyMem(addr c.buffer[0], addr input[i], length-i)
+      copyMem(addr self.buffer[0], unsafeAddr input[i], length-i)
   else:
     if length != 0:
-      copyMem(addr c.buffer[index], addr input[0], length)
+      copyMem(addr self.buffer[index], unsafeAddr input[0], length)
 
-proc update*(c: var MD4Context, input: string) =
-  c.update(input, input.len)
+proc update*(self: var MD4Context, input: string) =
+  ## MD4 block update operation. Continues an MD4 message-digest
+  ## operation, processing another message block, and updating the
+  ## context.
+  self.update(input, input.len)
 
 
-# MD4 finalization. Ends an MD4 message-digest operation, writing the
-# the message digest and zeroizing the context.
-proc finalize*(c: var MD4Context, digest: var MD4Digest) =
+proc finalize*(self: var MD4Context): MD4Digest =
+  ## MD4 finalization. Ends an MD4 message-digest operation, writing the
+  ## the message digest and zeroizing the context.
   var
     bits: array[8, uint8]
 
   # Save number of bits
-  encode(bits, c.count, 8)
+  encode(bits, self.count, 8)
 
   # Pad out to 56 mod 64.
   let
-    index = (c.count[0] shr 3) and 0x3f
+    index = (self.count[0] shr 3) and 0x3f
     padLen = if index < 56: 56 - index.int else: 120 - index.int
-  c.update(Padding, padLen)
+  self.update(Padding, padLen)
 
   # Append length (before padding)
-  c.update(cast[string](@bits), 8)
+  self.update(cast[string](@bits), 8)
   # Store state in digest
-  encode(digest, c.state, 16)
+  encode(result, self.state, 16)
 
   # Zeroize sensitive information.
-  zeroMem(addr c, MD4Context.sizeof)
-
-proc finalize*(c: var MD4Context): MD4Digest =
-  c.finalize(result)
+  zeroMem(addr self, MD4Context.sizeof)
 
 
 
-proc `$`*(d: MD4Digest): string =
-  ## converts a MD4Digest value into its string representation
+proc `$`*(digest: MD4Digest): string =
+  ## Converts a `MD4Digest <#MD4Digest>`_ value into its string representation.
   const digits = "0123456789abcdef"
-  result = ""
-  for i in 0..15:
-    add(result, digits[((d[i] shr 4) and 0xF).int])
-    add(result, digits[(d[i] and 0xF).int])
+  result = newString(digest.len*2)
+  for i, d in digest:
+    result[i*2]   = digits[((d shr 4) and 0xF).int]
+    result[i*2+1] = digits[(d and 0xF).int]
 
 
-proc toMD4* (s: string): MD4Digest =
-  ## computes the MD4Digest value for a string `s`
+proc toMD4*(s: string): MD4Digest =
+  ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s`.
   var
     c = initMD4()
   c.update(s)
   c.finalize()
 
-proc getMD4* (s: string): string =
-  ## computes an MD4 value of `s` and returns its string representation
+proc getMD4*(s: string): string =
+  ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s` and returns its string representation.
+  ##
+  ## This is equivalentto calling `$s.toMD4()`.
   $s.toMD4()
