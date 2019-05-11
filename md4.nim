@@ -194,9 +194,11 @@ proc update*(c: var MD4Context, input: string, length: int) =
     while i + 63 < length:
       transform(c.state, input[i..<i+64])
       i += 64
-    copyMem(addr c.buffer[0], addr input[i], length-i)
+    if length-i != 0:
+      copyMem(addr c.buffer[0], addr input[i], length-i)
   else:
-    copyMem(addr c.buffer[index], addr input[0], length)
+    if length != 0:
+      copyMem(addr c.buffer[index], addr input[0], length)
 
 proc update*(c: var MD4Context, input: string) =
   c.update(input, input.len)
@@ -214,7 +216,7 @@ proc finalize*(c: var MD4Context, digest: var MD4Digest) =
   # Pad out to 56 mod 64.
   let
     index = (c.count[0] shr 3) and 0x3f
-    padLen = if index < 56: 56 - index else: 120 - index
+    padLen = if index < 56: 56 - index.int else: 120 - index.int
   c.update(Padding, padLen)
 
   # Append length (before padding)
@@ -235,8 +237,8 @@ proc `$`*(d: MD4Digest): string =
   const digits = "0123456789abcdef"
   result = ""
   for i in 0..15:
-    add(result, digits[(d[i] shr 4) and 0xF])
-    add(result, digits[d[i] and 0xF])
+    add(result, digits[((d[i] shr 4) and 0xF).int])
+    add(result, digits[(d[i] and 0xF).int])
 
 
 proc toMD4* (s: string): MD4Digest =
