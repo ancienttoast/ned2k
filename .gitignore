@@ -1,2 +1,5 @@
 nimcache/
 *.code-workspace
+
+# Windows
+*.exe
