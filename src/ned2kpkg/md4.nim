@@ -1,4 +1,5 @@
 ## Module for computing `MD4 checksums <https://en.wikipedia.org/wiki/MD4>`_.
+## The api is based on the Nim standard lib's `MD5 module <https://nim-lang.org/docs/md5.html>`_.
 ##
 ## Based on source code provided in `RFC 1320 <https://tools.ietf.org/html/rfc1320>`_ by RSA Data Security, Inc.
 ##
@@ -176,39 +177,45 @@ func md4Init*(): MD4Context =
   zeroMem(addr result.buffer[0], result.buffer.sizeof)
 
 
-func md4Update(self: var MD4Context, input: string, length: int) =
+func md4Update*(self: var MD4Context, input: openarray[byte]) =
+  ## MD4 block update operation. Continues an MD4 message-digest
+  ## operation, processing another message block, and updating the
+  ## context.
   # Compute number of bytes mod 64
   let
     index = ((self.count[0] shr 3) and 0x3f).int
   # Update number of bits
-  self.count[0] += length.uint32 shl 3
-  if self.count[0] < length.uint32 shl 3:
+  self.count[0] += input.len.uint32 shl 3
+  if self.count[0] < input.len.uint32 shl 3:
     self.count[1] += 1
-  self.count[1] += length.uint32 shr 29
+  self.count[1] += input.len.uint32 shr 29
 
   let
     partLen = 64 - index
 
   # Transform as many times as possible.
-  if length >= partLen:
+  if input.len >= partLen:
     copyMem(addr self.buffer[index], unsafeAddr input[0], partLen)
     transform(self.state, self.buffer)
 
     var i = partLen
-    while i + 63 < length:
-      transform(self.state, input.toOpenArrayByte(i, i+63))
+    while i + 63 < input.len:
+      transform(self.state, input.toOpenArray(i, i+63))
       i += 64
-    if length-i != 0:
-      copyMem(addr self.buffer[0], unsafeAddr input[i], length-i)
+    if input.len-i != 0:
+      copyMem(addr self.buffer[0], unsafeAddr input[i], input.len-i)
   else:
-    if length != 0:
-      copyMem(addr self.buffer[index], unsafeAddr input[0], length)
+    if input.len != 0:
+      copyMem(addr self.buffer[index], unsafeAddr input[0], input.len)
 
 func md4Update*(self: var MD4Context, input: string) =
   ## MD4 block update operation. Continues an MD4 message-digest
   ## operation, processing another message block, and updating the
   ## context.
-  self.md4Update(input, input.len)
+  ##
+  ## See also:
+  ## * `md4Update proc <#md4Update,MD4Context,openarray[byte]>`_ which works with `openarray[byte]`
+  self.md4Update(input.toOpenArrayByte(0, input.high))
 
 
 func md4Finalize*(self: var MD4Context): MD4Digest =
@@ -224,10 +231,10 @@ func md4Finalize*(self: var MD4Context): MD4Digest =
   let
     index = (self.count[0] shr 3) and 0x3f
     padLen = if index < 56: 56 - index.int else: 120 - index.int
-  self.md4Update(PADDING, padLen)
+  self.md4Update(PADDING.toOpenArrayByte(0, padLen-1))
 
   # Append length (before padding)
-  self.md4Update(cast[string](@bits), 8)
+  self.md4Update(bits)
   # Store state in digest
   encode(result, self.state, 16)
 
@@ -247,6 +254,8 @@ func `$`*(digest: MD4Digest): string =
 
 func toMD4*(s: string): MD4Digest =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s`.
+  runnableExamples:
+    assert $toMD4("abc") == "a448017aaf21d8525fc10ae87aa6729d"
   var
     c = md4Init()
   c.md4Update(s)
@@ -256,4 +265,6 @@ func getMD4*(s: string): string =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s` and returns its string representation.
   ##
   ## This is equivalentto calling `$s.toMD4()`.
+  runnableExamples:
+    assert getMD4("abc") == "a448017aaf21d8525fc10ae87aa6729d"
   $s.toMD4()

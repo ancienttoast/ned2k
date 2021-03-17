@@ -2,7 +2,6 @@
 ##
 ## **See also:**
 ## * `ED2K <http://mldonkey.sourceforge.net/Ed2k-hash>`_
-from math import ceil
 from os import extractFilename
 import md4
 
@@ -14,21 +13,18 @@ const
 
 proc getEd2k*(file: File): MD4Digest =
   ## Computes the `ED2K checksum` for the given `file`.
-  let
-    size = file.getFileSize()
-    chunks = (size.int / ChunkSize).ceil.int
   var
-    hashes = newSeqOfCap[uint8](chunks*MD4Digest.len)
+    hash = md4Init()
     buffer = newString(CHUNK_SIZE)
   while not file.endOfFile():
     let
       length = file.readBuffer(addr buffer[0], buffer.len)
     # should only happen at the end of files
     buffer.setLen(length)
-    hashes &= buffer.toMd4()
+    hash.md4Update(buffer.toMd4())
   file.close()
 
-  cast[string](hashes).toMd4()
+  hash.md4Finalize()
 
 proc ed2kLink*(file: File, filename: string): string =
   ## Computes the `ED2K Link` for `file`. `filename` is only used as a part of the returned link.
