@@ -37,31 +37,31 @@ const
 
 
 # F, G and H are basic MD4 functions.
-proc F(x, y, z: uint32): uint32 {.inline.} = (x and y) or ((not x) and z)
-proc G(x, y, z: uint32): uint32 {.inline.} = (x and y) or (x and z) or (y and z)
-proc H(x, y, z: uint32): uint32 {.inline.} = x xor y xor z
+template F(x, y, z: uint32): uint32 = (x and y) or ((not x) and z)
+template G(x, y, z: uint32): uint32 = (x and y) or (x and z) or (y and z)
+template H(x, y, z: uint32): uint32 = x xor y xor z
 
 # ROTATE_LEFT rotates x left n bits.
-proc ROTATE_LEFT(x: uint32, n: uint8): uint32 {.inline.} = (x shl n) or (x shr (32'u32 - n))
+template ROTATE_LEFT(x: uint32, n: uint8): uint32 = (x shl n) or (x shr (32'u32 - n))
 
 
 # FF, GG and HH are transformations for rounds 1, 2 and 3
 # Rotation is separate from addition to prevent recomputation 
-proc FF(a: var uint32, b, c, d, x: uint32, s: uint8) =
+func FF(a: var uint32, b, c, d, x: uint32, s: uint8) =
   a += F(b, c, d) + x
   a = ROTATE_LEFT(a, s)
 
-proc GG(a: var uint32, b, c, d, x: uint32, s: uint8) =
+func GG(a: var uint32, b, c, d, x: uint32, s: uint8) =
   a += G(b, c, d) + x + 0x5a827999'u32
   a = ROTATE_LEFT(a, s)
 
-proc HH(a: var uint32, b, c, d, x: uint32, s: uint8) =
+func HH(a: var uint32, b, c, d, x: uint32, s: uint8) =
   a += H(b, c, d) + x + 0x6ed9eba1'u32
   a = ROTATE_LEFT(a, s)
 
 
 
-proc encode(output: var openarray[uint8], input: openarray[uint32], length: int) =
+func encode(output: var openarray[uint8], input: openarray[uint32], length: int) =
   # Encodes input (UINT4) into output (unsigned char). Assumes len is
   # a multiple of 4.
   var
@@ -75,7 +75,7 @@ proc encode(output: var openarray[uint8], input: openarray[uint32], length: int)
     i += 1
     j += 4
 
-proc decode(output: var openarray[uint32], input: MD4Block | string, length: int) =
+func decode(output: var openarray[uint32], input: MD4Block | openarray[byte], length: int) =
   # Decodes input (unsigned char) into output (UINT4). Assumes len is
   # a multiple of 4.
   var
@@ -87,7 +87,7 @@ proc decode(output: var openarray[uint32], input: MD4Block | string, length: int
     i += 1
     j += 4
 
-proc transform(state: var MD4State, bblock: MD4Block | string) =
+func transform(state: var MD4State, bblock: MD4Block | openarray[byte]) =
   # MD4 basic transformation. Transforms state based on block.
   var
     a = state[0]
@@ -162,7 +162,7 @@ proc transform(state: var MD4State, bblock: MD4Block | string) =
 
 
 
-proc md4Init*(): MD4Context =
+func md4Init*(): MD4Context =
   ## MD4 initialization. Begins an MD4 operation, writing a new context.
   result.count[0] = 0
   result.count[1] = 0
@@ -176,7 +176,7 @@ proc md4Init*(): MD4Context =
   zeroMem(addr result.buffer[0], result.buffer.sizeof)
 
 
-proc md4Update(self: var MD4Context, input: string, length: int) =
+func md4Update(self: var MD4Context, input: string, length: int) =
   # Compute number of bytes mod 64
   let
     index = ((self.count[0] shr 3) and 0x3f).int
@@ -196,7 +196,7 @@ proc md4Update(self: var MD4Context, input: string, length: int) =
 
     var i = partLen
     while i + 63 < length:
-      transform(self.state, input[i..<i+64])
+      transform(self.state, input.toOpenArrayByte(i, i+63))
       i += 64
     if length-i != 0:
       copyMem(addr self.buffer[0], unsafeAddr input[i], length-i)
@@ -204,14 +204,14 @@ proc md4Update(self: var MD4Context, input: string, length: int) =
     if length != 0:
       copyMem(addr self.buffer[index], unsafeAddr input[0], length)
 
-proc md4Update*(self: var MD4Context, input: string) =
+func md4Update*(self: var MD4Context, input: string) =
   ## MD4 block update operation. Continues an MD4 message-digest
   ## operation, processing another message block, and updating the
   ## context.
   self.md4Update(input, input.len)
 
 
-proc md4Finalize*(self: var MD4Context): MD4Digest =
+func md4Finalize*(self: var MD4Context): MD4Digest =
   ## MD4 finalization. Ends an MD4 message-digest operation, writing the
   ## the message digest and zeroizing the context.
   var
@@ -236,7 +236,7 @@ proc md4Finalize*(self: var MD4Context): MD4Digest =
 
 
 
-proc `$`*(digest: MD4Digest): string =
+func `$`*(digest: MD4Digest): string =
   ## Converts a `MD4Digest <#MD4Digest>`_ value into its string representation.
   const DIGITS = "0123456789abcdef"
   result = newString(digest.len*2)
@@ -245,14 +245,14 @@ proc `$`*(digest: MD4Digest): string =
     result[i*2+1] = DIGITS[(d and 0xF).int]
 
 
-proc toMD4*(s: string): MD4Digest =
+func toMD4*(s: string): MD4Digest =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s`.
   var
     c = md4Init()
   c.md4Update(s)
   c.md4Finalize()
 
-proc getMD4*(s: string): string =
+func getMD4*(s: string): string =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s` and returns its string representation.
   ##
   ## This is equivalentto calling `$s.toMD4()`.
