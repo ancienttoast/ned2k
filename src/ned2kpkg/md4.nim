@@ -1,4 +1,5 @@
 ## Module for computing `MD4 checksums <https://en.wikipedia.org/wiki/MD4>`_.
+##
 ## The api is based on the Nim standard lib's `MD5 module <https://nim-lang.org/docs/md5.html>`_.
 ##
 ## Based on source code provided in `RFC 1320 <https://tools.ietf.org/html/rfc1320>`_ by RSA Data Security, Inc.
@@ -6,6 +7,21 @@
 ## **See also:**
 ## * `MD4 <https://en.wikipedia.org/wiki/MD4>`_
 ## * `RFC 1320 <https://tools.ietf.org/html/rfc1320>`_
+##
+## Basic usage
+## ===========
+runnableExamples:
+  assert getMD4("abc") == "a448017aaf21d8525fc10ae87aa6729d"
+## Usage with multiple updates
+## ===========================
+runnableExamples:
+  var
+    c = md4Init()
+  c.md4Update("a")
+  c.md4Update("b")
+  c.md4Update("c")
+  assert $c.md4Finalize() == "a448017aaf21d8525fc10ae87aa6729d"
+
 type
   MD4State = array[4, uint32]
   MD4Block = array[64, uint8] 
@@ -264,7 +280,7 @@ func toMD4*(s: string): MD4Digest =
 func getMD4*(s: string): string =
   ## Computes the `MD4Digest <#MD4Digest>`_ value for a string `s` and returns its string representation.
   ##
-  ## This is equivalentto calling `$s.toMD4()`.
+  ## This is equivalent to calling `$s.toMD4()`.
   runnableExamples:
     assert getMD4("abc") == "a448017aaf21d8525fc10ae87aa6729d"
   $s.toMD4()

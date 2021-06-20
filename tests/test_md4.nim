@@ -23,7 +23,7 @@ suite "MD4 - multiple updates":
   for d in Tests:
     test d[0]:
       var
-        hash = md4Init()
+        checksum = md4Init()
       for c in d[0]:
-        hash.md4Update([c.byte])
-      check $hash.md4Finalize() == d[1]
+        checksum.md4Update([c.byte])
+      check $checksum.md4Finalize() == d[1]

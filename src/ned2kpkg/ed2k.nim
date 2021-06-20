@@ -1,5 +1,14 @@
 ## Module for computing `eDonkey2000 checksums <http://mldonkey.sourceforge.net/Ed2k-hash>`_.
 ##
+## 1. Files are split into chunks of 9500kB. The last chunk can be smaller.
+## 2. An MD4 checksum value is computed for each chunk.
+## 3. The checksum are concatenated together into a (number of chunks * 16) bytes long string.
+## 4. The final checksum is the MD4 checksum of this string.
+##
+## For files whose size is a multiple of chunk size old versions of the original *ed2k_hash*
+## tool calculated hashes with an additional 0 byte chunk at the end. Since this isn't the
+## case anymore this module doesn't support this behaviour.
+##
 ## **See also:**
 ## * `ED2K <http://mldonkey.sourceforge.net/Ed2k-hash>`_
 from os import extractFilename
